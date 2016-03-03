@@ -8,20 +8,11 @@ import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Toast;
-
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -31,9 +22,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
 
     private WebView webView;
-    private WebSocketClient mWebSocketClient;
     private static final String TAG = "AmbientSpeedo";
-    private static final String wsUrl = "172.19.5.235";
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -71,7 +60,6 @@ public class FullscreenActivity extends AppCompatActivity {
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
     };
-    private View mControlsView;
     private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
         public void run() {
@@ -80,7 +68,6 @@ public class FullscreenActivity extends AppCompatActivity {
             if (actionBar != null) {
                 actionBar.show();
             }
-            mControlsView.setVisibility(View.VISIBLE);
         }
     };
     private boolean mVisible;
@@ -88,7 +75,6 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void run() {
 
-//            mWebSocketClient.send("100");
         }
     };
     /**
@@ -115,15 +101,12 @@ public class FullscreenActivity extends AppCompatActivity {
 
         // Checks the orientation of the screen
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
-
             webView = (WebView) findViewById(R.id.fullscreen_content);
             webView.setInitialScale(getScale(metrics.widthPixels));
 
 
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
-
+            // this will not execute since app is forced to landscape mode via Android mainfest
             webView = (WebView) findViewById(R.id.fullscreen_content);
             webView.setInitialScale(getScale(metrics.heightPixels));
         }
@@ -144,7 +127,6 @@ public class FullscreenActivity extends AppCompatActivity {
         webView.getSettings().setBuiltInZoomControls(false);
         webView.loadUrl("http://rg.proppe.me");
         mVisible = true;
-//        mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
 
 
@@ -156,18 +138,7 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         });
 
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
-//        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
-//        webView.setWebViewClient(new WebViewClient() {
-//
-//            public void onPageFinished(WebView view, String url) {
-//                connectWebSocket();
-//
-//
-//            }
-//        });
+
 
     }
 
@@ -208,7 +179,6 @@ public class FullscreenActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.hide();
         }
-//        mControlsView.setVisibility(View.GONE);
         mVisible = false;
 
         // Schedule a runnable to remove the status and navigation bar after a delay
@@ -216,48 +186,6 @@ public class FullscreenActivity extends AppCompatActivity {
         mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    private void connectWebSocket() {
-        URI uri;
-        try {
-            uri = new URI("ws://"+wsUrl+":8080");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        mWebSocketClient = new WebSocketClient(uri) {
-            @Override
-            public void onOpen(ServerHandshake serverHandshake) {
-                Log.i(TAG, "Opened");
-                sendSpeed(50);
-                sendDistance(15);
-
-
-            }
-
-            @Override
-            public void onMessage(String s) {
-//                final String message = s;
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-            }
-
-            @Override
-            public void onClose(int i, String s, boolean b) {
-                Log.i(TAG, "Closed " + s);
-            }
-
-            @Override
-            public void onError(Exception e) {
-                Log.i(TAG, "Error " + e.getMessage());
-            }
-        };
-        mWebSocketClient.connect();
-    }
 
     @SuppressLint("InlinedApi")
     private void show() {
@@ -271,15 +199,6 @@ public class FullscreenActivity extends AppCompatActivity {
         mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    private void sendSpeed(int speed) {
-        mWebSocketClient.send("speed:" + speed);
-
-    }
-
-    private void sendDistance(int distance) {
-        mWebSocketClient.send("distance:" + distance);
-
-    }
 
     /**
      * Schedules a call to hide() in [delay] milliseconds, canceling any
